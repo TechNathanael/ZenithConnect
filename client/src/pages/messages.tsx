@@ -1,383 +1,389 @@
-import { useState } from "react";
-import UserAvatar from "@/components/common/UserAvatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Phone, Video, Info, Send, Image, Smile, Paperclip, Mic } from 'lucide-react';
 
-type Conversation = {
+interface Message {
+  id: number;
+  content: string;
+  senderId: number;
+  timestamp: string;
+  isRead: boolean;
+}
+
+interface Conversation {
   id: number;
   user: {
+    id: number;
     name: string;
     avatar: string;
-    online: boolean;
+    isOnline: boolean;
+    lastActive?: string;
   };
-  lastMessage: {
-    text: string;
-    time: string;
-    isUnread: boolean;
-  };
-};
+  lastMessage?: string;
+  unreadCount: number;
+  messages: Message[];
+}
 
-type Message = {
-  id: number;
-  text: string;
-  time: string;
-  isFromMe: boolean;
-  sender?: {
-    name: string;
-    avatar: string;
-  };
-};
-
-const conversations: Conversation[] = [
-  {
-    id: 1,
-    user: {
-      name: "Sarah Johnson",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150",
-      online: true
-    },
-    lastMessage: {
-      text: "Yes, I can help with the design review tomorrow!",
-      time: "5m",
-      isUnread: true
-    }
-  },
-  {
-    id: 2,
-    user: {
-      name: "Mike Williams",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150",
-      online: true
-    },
-    lastMessage: {
-      text: "Did you see the latest project requirements?",
-      time: "30m",
-      isUnread: false
-    }
-  },
-  {
-    id: 3,
-    user: {
-      name: "David Chen",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150",
-      online: true
-    },
-    lastMessage: {
-      text: "Let's catch up about the dashboard project",
-      time: "1h",
-      isUnread: false
-    }
-  },
-  {
-    id: 4,
-    user: {
-      name: "Emma Wilson",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150",
-      online: true
-    },
-    lastMessage: {
-      text: "I've sent the illustrations you requested",
-      time: "3h",
-      isUnread: false
-    }
-  },
-  {
-    id: 5,
-    user: {
-      name: "Jamal Thomas",
-      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150",
-      online: false
-    },
-    lastMessage: {
-      text: "We need to finalize the project timeline",
-      time: "1d",
-      isUnread: false
-    }
-  }
-];
-
-const messages: Record<number, Message[]> = {
-  1: [
+const Messages: React.FC = () => {
+  const [conversations, setConversations] = useState<Conversation[]>([
     {
       id: 1,
-      text: "Hey Alex, how's it going?",
-      time: "10:15 AM",
-      isFromMe: false,
-      sender: {
-        name: "Sarah Johnson",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150"
-      }
+      user: {
+        id: 2,
+        name: 'Emma Wilson',
+        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150',
+        isOnline: true,
+      },
+      lastMessage: 'I just saw your new post! 😍',
+      unreadCount: 2,
+      messages: [
+        { id: 1, content: 'Hey there!', senderId: 2, timestamp: '2025-05-22T10:30:00', isRead: true },
+        { id: 2, content: 'I loved your latest post about the tech conference.', senderId: 2, timestamp: '2025-05-22T10:32:00', isRead: true },
+        { id: 3, content: 'Thanks! It was an amazing experience.', senderId: 1, timestamp: '2025-05-22T10:35:00', isRead: true },
+        { id: 4, content: 'Did you get to try out the new VR demos?', senderId: 2, timestamp: '2025-05-22T10:37:00', isRead: true },
+        { id: 5, content: 'Yes! The AR presentation was incredible too!', senderId: 1, timestamp: '2025-05-22T10:40:00', isRead: true },
+        { id: 6, content: 'I just saw your new post! 😍', senderId: 2, timestamp: '2025-05-23T09:15:00', isRead: false },
+        { id: 7, content: 'We should collaborate on a project sometime!', senderId: 2, timestamp: '2025-05-23T09:16:00', isRead: false },
+      ]
     },
     {
       id: 2,
-      text: "Hi Sarah! I'm doing well, just finishing up some work on the project. How about you?",
-      time: "10:18 AM",
-      isFromMe: true
+      user: {
+        id: 3,
+        name: 'David Chen',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150',
+        isOnline: false,
+        lastActive: '5m ago'
+      },
+      lastMessage: 'Are we still meeting tomorrow?',
+      unreadCount: 0,
+      messages: [
+        { id: 1, content: 'Hey, are you free to discuss the project tomorrow?', senderId: 3, timestamp: '2025-05-22T15:10:00', isRead: true },
+        { id: 2, content: 'Yes, what time works for you?', senderId: 1, timestamp: '2025-05-22T15:15:00', isRead: true },
+        { id: 3, content: 'How about 2pm?', senderId: 3, timestamp: '2025-05-22T15:20:00', isRead: true },
+        { id: 4, content: 'Sounds good to me!', senderId: 1, timestamp: '2025-05-22T15:25:00', isRead: true },
+        { id: 5, content: 'Are we still meeting tomorrow?', senderId: 3, timestamp: '2025-05-23T08:30:00', isRead: true },
+      ]
     },
     {
       id: 3,
-      text: "I'm good! I was wondering if you could help me with a design review tomorrow?",
-      time: "10:22 AM",
-      isFromMe: false,
-      sender: {
-        name: "Sarah Johnson",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150"
-      }
+      user: {
+        id: 4,
+        name: 'Sophia Rodriguez',
+        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150',
+        isOnline: true,
+      },
+      lastMessage: 'Check out this awesome design!',
+      unreadCount: 1,
+      messages: [
+        { id: 1, content: 'Hi! I wanted to show you something.', senderId: 4, timestamp: '2025-05-22T17:45:00', isRead: true },
+        { id: 2, content: 'Sure, what is it?', senderId: 1, timestamp: '2025-05-22T17:48:00', isRead: true },
+        { id: 3, content: 'Check out this awesome design!', senderId: 4, timestamp: '2025-05-22T17:50:00', isRead: false },
+      ]
     },
     {
       id: 4,
-      text: "Yes, I can help with the design review tomorrow!",
-      time: "10:25 AM",
-      isFromMe: true
-    }
-  ],
-  2: [
-    {
-      id: 1,
-      text: "Alex, did you get a chance to look at those requirements?",
-      time: "9:45 AM",
-      isFromMe: false,
-      sender: {
-        name: "Mike Williams",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150"
-      }
+      user: {
+        id: 5,
+        name: 'James Thompson',
+        avatar: 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150',
+        isOnline: false,
+        lastActive: '2h ago'
+      },
+      lastMessage: 'Let me know when you get a chance to review the document I sent.',
+      unreadCount: 0,
+      messages: [
+        { id: 1, content: 'I just sent you the document for review.', senderId: 5, timestamp: '2025-05-21T14:30:00', isRead: true },
+        { id: 2, content: 'Let me know when you get a chance to review the document I sent.', senderId: 5, timestamp: '2025-05-22T09:15:00', isRead: true },
+      ]
     },
     {
-      id: 2,
-      text: "Not yet, I'll check them today. Anything specific I should focus on?",
-      time: "9:50 AM",
-      isFromMe: true
-    },
-    {
-      id: 3,
-      text: "Did you see the latest project requirements?",
-      time: "10:30 AM",
-      isFromMe: false,
-      sender: {
-        name: "Mike Williams",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150"
-      }
+      id: 5,
+      user: {
+        id: 6,
+        name: 'Olivia Parker',
+        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150',
+        isOnline: true,
+      },
+      lastMessage: 'Thanks for the help with the code issue!',
+      unreadCount: 0,
+      messages: [
+        { id: 1, content: 'Hey, I\'m having trouble with this code snippet.', senderId: 6, timestamp: '2025-05-21T11:20:00', isRead: true },
+        { id: 2, content: 'What seems to be the problem?', senderId: 1, timestamp: '2025-05-21T11:25:00', isRead: true },
+        { id: 3, content: 'I\'m getting a weird error with the API call.', senderId: 6, timestamp: '2025-05-21T11:28:00', isRead: true },
+        { id: 4, content: 'Try adding the authorization header.', senderId: 1, timestamp: '2025-05-21T11:30:00', isRead: true },
+        { id: 5, content: 'Thanks for the help with the code issue!', senderId: 6, timestamp: '2025-05-21T11:45:00', isRead: true },
+      ]
     }
-  ]
-};
-
-export default function Messages() {
-  const [activeConversation, setActiveConversation] = useState<Conversation | null>(conversations[0]);
-  const [newMessage, setNewMessage] = useState("");
-  const [activeMessages, setActiveMessages] = useState<Message[]>(messages[conversations[0].id] || []);
+  ]);
   
-  const handleConversationSelect = (conversation: Conversation) => {
-    setActiveConversation(conversation);
-    setActiveMessages(messages[conversation.id] || []);
-  };
+  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
+  const [messageText, setMessageText] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Set the first conversation as active by default
+  useEffect(() => {
+    if (conversations.length > 0 && !activeConversation) {
+      setActiveConversation(conversations[0]);
+      
+      // Mark messages as read when conversation is opened
+      const updatedConversations = [...conversations];
+      updatedConversations[0].messages = updatedConversations[0].messages.map(msg => ({
+        ...msg,
+        isRead: true
+      }));
+      updatedConversations[0].unreadCount = 0;
+      setConversations(updatedConversations);
+    }
+  }, [conversations]);
+  
+  // Scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeConversation]);
+  
+  const handleSendMessage = () => {
+    if (!messageText.trim() || !activeConversation) return;
     
-    if (!newMessage.trim() || !activeConversation) return;
-    
-    const newMessageObj: Message = {
-      id: activeMessages.length + 1,
-      text: newMessage,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isFromMe: true
+    const newMessage: Message = {
+      id: Math.max(...activeConversation.messages.map(m => m.id)) + 1,
+      content: messageText,
+      senderId: 1, // Current user
+      timestamp: new Date().toISOString(),
+      isRead: true,
     };
     
-    setActiveMessages([...activeMessages, newMessageObj]);
-    setNewMessage("");
+    const updatedConversations = conversations.map(conv => {
+      if (conv.id === activeConversation.id) {
+        return {
+          ...conv,
+          messages: [...conv.messages, newMessage],
+          lastMessage: messageText,
+        };
+      }
+      return conv;
+    });
+    
+    setConversations(updatedConversations);
+    setMessageText('');
+    
+    // Update the active conversation
+    const updatedActiveConversation = updatedConversations.find(c => c.id === activeConversation.id)!;
+    setActiveConversation(updatedActiveConversation);
   };
   
+  const handleSelectConversation = (conversation: Conversation) => {
+    // Mark messages as read when conversation is opened
+    const updatedConversations = conversations.map(conv => {
+      if (conv.id === conversation.id) {
+        return {
+          ...conv,
+          messages: conv.messages.map(msg => ({ ...msg, isRead: true })),
+          unreadCount: 0,
+        };
+      }
+      return conv;
+    });
+    
+    setConversations(updatedConversations);
+    
+    // Set active conversation to the updated version
+    const updatedConversation = updatedConversations.find(c => c.id === conversation.id)!;
+    setActiveConversation(updatedConversation);
+  };
+  
+  const formatMessageTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
-    <div className="container mx-auto px-4">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Messages</h1>
-        
-        <Card className="h-[calc(80vh-100px)] flex">
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex h-[calc(100vh-12rem)] rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {/* Conversations List */}
+        <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800">
+          {/* Conversations Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Messages</h2>
+            <div className="mt-2 relative">
+              <input
+                type="text"
+                placeholder="Search conversations..."
+                className="w-full pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 rounded-full border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+              />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+            </div>
+          </div>
+          
           {/* Conversations List */}
-          <div className="w-1/3 border-r border-gray-200 dark:border-gray-700">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="material-icons text-gray-400 text-lg">search</span>
-                </span>
-                <input 
-                  type="text" 
-                  className="block w-full bg-gray-100 dark:bg-gray-700 border-0 rounded-full pl-10 pr-4 py-2 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-550 dark:focus:ring-teal-450" 
-                  placeholder="Search messages..." 
-                />
+          <div className="flex-1 overflow-y-auto">
+            {conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                className={`p-4 flex items-center hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
+                  activeConversation?.id === conversation.id ? 'bg-gray-50 dark:bg-gray-700' : ''
+                }`}
+                onClick={() => handleSelectConversation(conversation)}
+              >
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full overflow-hidden">
+                    <img 
+                      src={conversation.user.avatar} 
+                      alt={conversation.user.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {conversation.user.isOnline && (
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                  )}
+                </div>
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">{conversation.user.name}</p>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {conversation.user.isOnline ? 'Online' : conversation.user.lastActive}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{conversation.lastMessage}</p>
+                    {conversation.unreadCount > 0 && (
+                      <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-500 rounded-full">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Conversation Detail */}
+        {activeConversation ? (
+          <div className="w-2/3 flex flex-col bg-gray-50 dark:bg-gray-900">
+            {/* Conversation Header */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center">
+              <div className="flex items-center">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full overflow-hidden">
+                    <img 
+                      src={activeConversation.user.avatar} 
+                      alt={activeConversation.user.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {activeConversation.user.isOnline && (
+                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                  )}
+                </div>
+                <div className="ml-3">
+                  <p className="font-medium text-gray-900 dark:text-white">{activeConversation.user.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {activeConversation.user.isOnline ? 'Online' : `Last active ${activeConversation.user.lastActive}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <button className="p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Phone className="h-5 w-5" />
+                </button>
+                <button className="p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Video className="h-5 w-5" />
+                </button>
+                <button className="p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Info className="h-5 w-5" />
+                </button>
               </div>
             </div>
             
-            <Tabs defaultValue="primary">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="primary">Primary</TabsTrigger>
-                <TabsTrigger value="requests">Requests</TabsTrigger>
-                <TabsTrigger value="archived">Archived</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="primary" className="m-0">
-                <ScrollArea className="h-[calc(80vh-200px)]">
-                  <div className="p-2 space-y-1">
-                    {conversations.map(conversation => (
-                      <div 
-                        key={conversation.id}
-                        className={`flex items-center p-3 rounded-lg cursor-pointer ${activeConversation?.id === conversation.id ? 'bg-indigo-50 dark:bg-gray-700' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                        onClick={() => handleConversationSelect(conversation)}
-                      >
-                        <div className="relative">
-                          <UserAvatar 
-                            src={conversation.user.avatar}
-                            alt={`${conversation.user.name}'s profile`}
-                            size="md"
-                          />
-                          {conversation.user.online && (
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
-                          )}
-                        </div>
-                        <div className="ml-3 flex-grow min-w-0">
-                          <div className="flex justify-between items-baseline">
-                            <h3 className="font-medium truncate">{conversation.user.name}</h3>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">{conversation.lastMessage.time}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <p className={`text-sm truncate ${conversation.lastMessage.isUnread ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                              {conversation.lastMessage.text}
-                            </p>
-                            {conversation.lastMessage.isUnread && (
-                              <div className="ml-2 w-2 h-2 bg-indigo-550 rounded-full"></div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-              <TabsContent value="requests" className="m-0 p-4 flex flex-col items-center justify-center h-[calc(80vh-200px)]">
-                <div className="text-center">
-                  <span className="material-icons text-gray-400 text-5xl mb-2">inbox</span>
-                  <h3 className="text-lg font-medium mb-1">No Message Requests</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">When someone you're not connected with sends you a message, it will appear here.</p>
-                </div>
-              </TabsContent>
-              <TabsContent value="archived" className="m-0 p-4 flex flex-col items-center justify-center h-[calc(80vh-200px)]">
-                <div className="text-center">
-                  <span className="material-icons text-gray-400 text-5xl mb-2">archive</span>
-                  <h3 className="text-lg font-medium mb-1">No Archived Chats</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Conversations you archive will appear here.</p>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-          
-          {/* Chat Area */}
-          <div className="w-2/3 flex flex-col">
-            {activeConversation ? (
-              <>
-                {/* Chat Header */}
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <UserAvatar 
-                      src={activeConversation.user.avatar}
-                      alt={`${activeConversation.user.name}'s profile`}
-                      size="sm"
-                    />
-                    <div className="ml-3">
-                      <h3 className="font-medium">{activeConversation.user.name}</h3>
-                      <p className="text-xs text-green-500">{activeConversation.user.online ? 'Online' : 'Offline'}</p>
+            {/* Message List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {activeConversation.messages.map((message) => (
+                <div key={message.id} className={`flex ${message.senderId === 1 ? 'justify-end' : 'justify-start'}`}>
+                  {message.senderId !== 1 && (
+                    <div className="w-8 h-8 rounded-full overflow-hidden mr-2 flex-shrink-0">
+                      <img 
+                        src={activeConversation.user.avatar} 
+                        alt={activeConversation.user.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div 
+                    className={`max-w-[70%] px-4 py-2 rounded-lg ${
+                      message.senderId === 1 
+                        ? 'bg-indigo-500 text-white' 
+                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                    <div className={`text-xs mt-1 ${message.senderId === 1 ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {formatMessageTime(message.timestamp)}
+                      {message.senderId === 1 && (
+                        <span className="ml-1">
+                          {message.isRead ? '• Read' : '• Sent'}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <span className="material-icons text-gray-500">phone</span>
-                    </button>
-                    <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <span className="material-icons text-gray-500">videocam</span>
-                    </button>
-                    <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <span className="material-icons text-gray-500">info</span>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+            
+            {/* Message Input */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div className="flex items-end">
+                <div className="flex space-x-2 mr-3">
+                  <button className="p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <Paperclip className="h-5 w-5" />
+                  </button>
+                  <button className="p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <Image className="h-5 w-5" />
+                  </button>
+                  <button className="p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <Smile className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="flex-1 relative">
+                  <textarea
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    placeholder="Type a message..."
+                    className="w-full pr-10 pl-4 py-3 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-teal-400 resize-none max-h-32"
+                    rows={1}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                  />
+                  <div className="absolute right-3 bottom-3">
+                    <button className="p-1 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                      <Mic className="h-5 w-5" />
                     </button>
                   </div>
                 </div>
-                
-                {/* Messages */}
-                <ScrollArea className="flex-grow p-4">
-                  <div className="space-y-4">
-                    {activeMessages.map(message => (
-                      <div 
-                        key={message.id} 
-                        className={`flex ${message.isFromMe ? 'justify-end' : 'justify-start'}`}
-                      >
-                        {!message.isFromMe && message.sender && (
-                          <UserAvatar 
-                            src={message.sender.avatar}
-                            alt={`${message.sender.name}'s profile`}
-                            size="xs"
-                            className="mt-1 mr-2"
-                          />
-                        )}
-                        <div>
-                          <div 
-                            className={`rounded-2xl px-4 py-2 max-w-xs ${
-                              message.isFromMe 
-                                ? 'bg-indigo-550 text-white' 
-                                : 'bg-gray-100 dark:bg-gray-700'
-                            }`}
-                          >
-                            <p className="text-sm">{message.text}</p>
-                          </div>
-                          <div className={`text-xs text-gray-500 mt-1 ${message.isFromMe ? 'text-right' : 'text-left'}`}>
-                            {message.time}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-                
-                {/* Message Input */}
-                <CardContent className="border-t border-gray-200 dark:border-gray-700 p-4">
-                  <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
-                    <button type="button" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <span className="material-icons text-gray-500">add_circle</span>
-                    </button>
-                    <button type="button" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <span className="material-icons text-gray-500">image</span>
-                    </button>
-                    <button type="button" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <span className="material-icons text-gray-500">mic</span>
-                    </button>
-                    <Input 
-                      type="text" 
-                      placeholder="Type a message..." 
-                      className="flex-grow"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                    />
-                    <button 
-                      type="submit" 
-                      className="p-2 rounded-full bg-indigo-550 hover:bg-indigo-600 text-white disabled:opacity-50"
-                      disabled={!newMessage.trim()}
-                    >
-                      <span className="material-icons">send</span>
-                    </button>
-                  </form>
-                </CardContent>
-              </>
-            ) : (
-              <div className="flex-grow flex flex-col items-center justify-center p-4">
-                <div className="text-center">
-                  <span className="material-icons text-gray-400 text-5xl mb-4">forum</span>
-                  <h3 className="text-xl font-medium mb-2">Your Messages</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">Select a conversation to start chatting.</p>
-                </div>
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!messageText.trim()}
+                  className="ml-3 p-3 rounded-full bg-indigo-500 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-600"
+                >
+                  <Send className="h-5 w-5" />
+                </button>
               </div>
-            )}
+            </div>
           </div>
-        </Card>
+        ) : (
+          <div className="w-2/3 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+            <div className="text-center">
+              <p className="text-gray-500 dark:text-gray-400">Select a conversation to start messaging</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default Messages;

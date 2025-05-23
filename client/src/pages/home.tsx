@@ -200,11 +200,45 @@ const Home: React.FC = () => {
                       {getRelativeTime(post.createdAt)}
                     </div>
                   </div>
-                  <button className="text-gray-500 dark:text-gray-400 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                    </svg>
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={() => {
+                        const optionsMenu = document.getElementById(`post-options-${post.id}`);
+                        if (optionsMenu) {
+                          optionsMenu.classList.toggle('hidden');
+                        }
+                      }}
+                      className="text-gray-500 dark:text-gray-400 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </button>
+                    
+                    {/* Post Options Menu */}
+                    <div id={`post-options-${post.id}`} className="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50 border border-gray-200 dark:border-gray-700">
+                      <div className="py-1" role="menu" aria-orientation="vertical">
+                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                          Save post
+                        </button>
+                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                          Edit post
+                        </button>
+                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                          Turn off notifications for this post
+                        </button>
+                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                          Download
+                        </button>
+                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                          Report post
+                        </button>
+                        <button className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                          Hide post
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 {/* Post Content */}
@@ -236,18 +270,155 @@ const Home: React.FC = () => {
                 
                 {/* Post Actions */}
                 <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-700">
-                  <button className="flex items-center justify-center py-1 text-gray-600 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                  <button 
+                    onClick={() => {
+                      console.log(`Liked post: ${post.id}`);
+                      // Show feedback for the user
+                      const likeButton = document.getElementById(`like-button-${post.id}`);
+                      if (likeButton) {
+                        likeButton.classList.add('text-red-500');
+                        // Update the UI to show liked state
+                        const likeCount = document.getElementById(`like-count-${post.id}`);
+                        if (likeCount) {
+                          const currentCount = parseInt(likeCount.innerText);
+                          likeCount.innerText = (currentCount + 1).toString();
+                        }
+                      }
+                    }}
+                    id={`like-button-${post.id}`}
+                    className="flex items-center justify-center py-1 text-gray-600 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md hover:text-red-500 transition-colors"
+                  >
                     <Heart className="h-5 w-5 mr-1" />
                     Like
                   </button>
-                  <button className="flex items-center justify-center py-1 text-gray-600 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                  <button 
+                    onClick={() => {
+                      console.log(`Comment on post: ${post.id}`);
+                      // Show comment form
+                      const commentForm = document.getElementById(`comment-form-${post.id}`);
+                      if (commentForm) {
+                        commentForm.classList.toggle('hidden');
+                        const textarea = commentForm.querySelector('textarea');
+                        if (textarea) {
+                          textarea.focus();
+                        }
+                      }
+                    }}
+                    className="flex items-center justify-center py-1 text-gray-600 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
+                  >
                     <MessageCircle className="h-5 w-5 mr-1" />
                     Comment
                   </button>
-                  <button className="flex items-center justify-center py-1 text-gray-600 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                  <button 
+                    onClick={() => {
+                      console.log(`Share post: ${post.id}`);
+                      
+                      // Create a share menu popup
+                      const shareMenu = document.getElementById(`share-menu-${post.id}`);
+                      if (shareMenu) {
+                        shareMenu.classList.toggle('hidden');
+                      }
+                    }}
+                    className="flex items-center justify-center py-1 text-gray-600 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
+                  >
                     <Share2 className="h-5 w-5 mr-1" />
                     Share
                   </button>
+                </div>
+                
+                {/* Comment Form */}
+                <div id={`comment-form-${post.id}`} className="hidden px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start">
+                    <div className="w-8 h-8 rounded-full overflow-hidden mr-2">
+                      <img 
+                        src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150" 
+                        alt="Your profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <textarea
+                        placeholder="Write a comment..."
+                        className="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-teal-400 resize-none min-h-[80px]"
+                      ></textarea>
+                      <div className="flex justify-end mt-2">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const commentForm = document.getElementById(`comment-form-${post.id}`);
+                            const textarea = commentForm?.querySelector('textarea');
+                            if (textarea) {
+                              const commentText = textarea.value;
+                              console.log(`New comment on post ${post.id}: ${commentText}`);
+                              
+                              // Add new comment to UI
+                              const commentsSection = document.getElementById(`comments-section-${post.id}`);
+                              if (commentsSection && commentText.trim()) {
+                                // Create new comment element
+                                const newComment = document.createElement('div');
+                                newComment.className = 'flex items-start mb-3';
+                                newComment.innerHTML = `
+                                  <div class="w-8 h-8 rounded-full overflow-hidden mr-2">
+                                    <img 
+                                      src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150" 
+                                      alt="Your profile" 
+                                      class="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
+                                    <div class="font-medium text-sm text-gray-900 dark:text-white">You</div>
+                                    <p class="text-sm text-gray-800 dark:text-gray-200">${commentText}</p>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Just now</div>
+                                  </div>
+                                `;
+                                commentsSection.appendChild(newComment);
+                                
+                                // Update comment count
+                                const commentCount = document.getElementById(`comment-count-${post.id}`);
+                                if (commentCount) {
+                                  const count = parseInt(commentCount.innerText.split(' ')[0]) + 1;
+                                  commentCount.innerText = `${count} comments`;
+                                }
+                                
+                                // Clear textarea
+                                textarea.value = '';
+                              }
+                            }
+                          }}
+                          className="px-4 py-1 bg-indigo-500 text-white rounded-full text-sm font-medium hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                          Post
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Comments Section */}
+                <div id={`comments-section-${post.id}`} className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                  {post.commentCount > 0 && (
+                    <div className="text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:underline">
+                      View all comments
+                    </div>
+                  )}
+                </div>
+                
+                {/* Share Menu */}
+                <div id={`share-menu-${post.id}`} className="hidden absolute right-4 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50 border border-gray-200 dark:border-gray-700">
+                  <div className="py-1" role="menu" aria-orientation="vertical">
+                    <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                      Share to your timeline
+                    </button>
+                    <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                      Share in a message
+                    </button>
+                    <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                      Share to a group
+                    </button>
+                    <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                      Copy link
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
