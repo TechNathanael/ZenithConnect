@@ -1,149 +1,184 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
-import Logo from "@/components/common/Logo";
-import UserAvatar from "@/components/common/UserAvatar";
+import React, { useState } from 'react';
+import { Link, useLocation } from 'wouter';
+import { Search, Bell, MessageCircle, Menu, X } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
-export default function Header() {
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+const Header: React.FC = () => {
   const [location] = useLocation();
+  const { theme } = useTheme();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  const toggleProfileMenu = () => {
-    setIsProfileMenuOpen(!isProfileMenuOpen);
+  const navItems = [
+    { path: '/', label: 'Home' },
+    { path: '/discover', label: 'Discover' },
+    { path: '/friends', label: 'Friends' },
+    { path: '/messages', label: 'Messages' },
+    { path: '/notifications', label: 'Notifications' },
+  ];
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  // Close the menu when clicking outside
-  const handleClickOutside = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest("#user-menu-button") && isProfileMenuOpen) {
-      setIsProfileMenuOpen(false);
-    }
+  const toggleSearch = () => {
+    setSearchOpen(!searchOpen);
   };
 
   return (
-    <>
-      <header className="fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <Logo />
-              </Link>
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo */}
+          <div className="flex items-center">
+            <Link href="/">
+              <a className="flex items-center">
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-r from-indigo-500 to-teal-400 flex items-center justify-center text-white font-bold text-xl">Z</div>
+                <span className="ml-2 text-xl font-bold bg-gradient-to-r from-indigo-600 to-teal-500 bg-clip-text text-transparent hidden sm:inline-block">ZenithHub</span>
+              </a>
+            </Link>
+          </div>
+
+          {/* Search Bar - Desktop */}
+          <div className="hidden md:flex items-center flex-1 max-w-xl mx-8">
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Search ZenithHub"
+                className="w-full py-2 px-4 pr-10 rounded-full border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-teal-400 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              />
+              <Search className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
-            
-            {/* Search Bar */}
-            <div className="hidden md:block flex-grow max-w-xl mx-6">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="material-icons text-gray-400 text-lg">search</span>
-                </div>
-                <input 
-                  type="text" 
-                  className="block w-full bg-gray-100 dark:bg-gray-700 border-0 rounded-full pl-10 pr-4 py-2 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-550 dark:focus:ring-teal-450" 
-                  placeholder="Search ZenithHub..." 
-                  aria-label="Search" 
-                />
-              </div>
-            </div>
-            
-            {/* Main Navigation */}
-            <nav className="flex items-center space-x-1 md:space-x-4" onClick={handleClickOutside}>
-              <Link 
-                href="/" 
-                className={`p-2 ${location === "/" ? "text-indigo-550" : "text-gray-600 dark:text-gray-300 hover:text-indigo-550 dark:hover:text-teal-450"} relative`} 
-                aria-label="Home" 
-                title="Home"
-              >
-                <span className="material-icons">home</span>
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {navItems.slice(0, 3).map((item) => (
+              <Link key={item.path} href={item.path}>
+                <a className={`px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                  location === item.path
+                    ? 'text-indigo-600 dark:text-teal-400'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}>
+                  {item.label}
+                </a>
               </Link>
-              <Link 
-                href="/friends" 
-                className={`p-2 ${location === "/friends" ? "text-indigo-550" : "text-gray-600 dark:text-gray-300 hover:text-indigo-550 dark:hover:text-teal-450"} relative`} 
-                aria-label="Friends" 
-                title="Friends"
-              >
-                <span className="material-icons">people</span>
-              </Link>
-              <Link 
-                href="/messages" 
-                className={`p-2 ${location === "/messages" ? "text-indigo-550" : "text-gray-600 dark:text-gray-300 hover:text-indigo-550 dark:hover:text-teal-450"} relative`} 
-                aria-label="Messages" 
-                title="Messages"
-              >
-                <span className="material-icons">chat</span>
-                <span className="absolute top-1 right-1 w-3 h-3 bg-indigo-550 rounded-full"></span>
-              </Link>
-              <Link 
-                href="/notifications" 
-                className={`p-2 ${location === "/notifications" ? "text-indigo-550" : "text-gray-600 dark:text-gray-300 hover:text-indigo-550 dark:hover:text-teal-450"} relative`} 
-                aria-label="Notifications" 
-                title="Notifications"
-              >
-                <span className="material-icons">notifications</span>
-                <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-              </Link>
-              <Link 
-                href="/discover" 
-                className={`p-2 ${location === "/discover" ? "text-indigo-550" : "text-gray-600 dark:text-gray-300 hover:text-indigo-550 dark:hover:text-teal-450"}`} 
-                aria-label="Discover" 
-                title="Discover"
-              >
-                <span className="material-icons">explore</span>
-              </Link>
-              
-              {/* Profile Dropdown */}
-              <div className="relative ml-2">
-                <button 
-                  className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-550 dark:focus:ring-teal-450"
-                  id="user-menu-button"
-                  aria-expanded={isProfileMenuOpen}
-                  aria-haspopup="true"
-                  onClick={toggleProfileMenu}
-                >
-                  <span className="sr-only">Open user menu</span>
-                  <UserAvatar 
-                    src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150"
-                    alt="Profile picture" 
-                    size="sm"
+            ))}
+
+            {/* Icons for Messages and Notifications */}
+            <Link href="/messages">
+              <a className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                location === '/messages'
+                  ? 'text-indigo-600 dark:text-teal-400'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}>
+                <MessageCircle className="h-6 w-6" />
+              </a>
+            </Link>
+
+            <Link href="/notifications">
+              <a className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 relative ${
+                location === '/notifications'
+                  ? 'text-indigo-600 dark:text-teal-400'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}>
+                <Bell className="h-6 w-6" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </a>
+            </Link>
+
+            {/* Profile Dropdown Trigger */}
+            <Link href="/profile">
+              <a className="flex items-center ml-4">
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <img 
+                    src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150" 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
                   />
-                </button>
-                
-                {/* Dropdown Menu */}
-                {isProfileMenuOpen && (
-                  <div 
-                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50" 
-                    role="menu" 
-                    aria-orientation="vertical" 
-                    aria-labelledby="user-menu-button" 
-                    tabIndex={-1}
-                  >
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Your Profile</Link>
-                    <Link href="/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Settings</Link>
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Privacy Center</a>
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Help</a>
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Sign out</a>
-                  </div>
-                )}
-              </div>
-            </nav>
+                </div>
+              </a>
+            </Link>
+          </nav>
+
+          {/* Mobile Header Icons */}
+          <div className="flex items-center md:hidden">
+            <button 
+              onClick={toggleSearch}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+            >
+              <Search className="h-6 w-6" />
+            </button>
+
+            <button 
+              onClick={toggleMobileMenu}
+              className="ml-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
         </div>
-      </header>
-      
-      {/* Mobile search (visible only on mobile) */}
-      <div className="md:hidden fixed top-16 left-0 right-0 p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-40">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="material-icons text-gray-400 text-lg">search</span>
+
+        {/* Mobile Search - Conditional Render */}
+        {searchOpen && (
+          <div className="px-4 py-3 md:hidden">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search ZenithHub"
+                className="w-full py-2 px-4 pr-10 rounded-full border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-teal-400 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              />
+              <Search className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
           </div>
-          <input 
-            type="text" 
-            className="block w-full bg-gray-100 dark:bg-gray-700 border-0 rounded-full pl-10 pr-4 py-2 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-550 dark:focus:ring-teal-450" 
-            placeholder="Search ZenithHub..." 
-            aria-label="Search" 
-          />
-        </div>
+        )}
+
+        {/* Mobile Menu - Conditional Render */}
+        {mobileMenuOpen && (
+          <nav className="px-4 py-3 space-y-1 md:hidden">
+            {navItems.map((item) => (
+              <Link key={item.path} href={item.path}>
+                <a 
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${
+                    location === item.path
+                      ? 'bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-teal-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </a>
+              </Link>
+            ))}
+            <Link href="/profile">
+              <a 
+                className={`block px-3 py-2 rounded-md text-base font-medium ${
+                  location === '/profile'
+                    ? 'bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-teal-400'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Profile
+              </a>
+            </Link>
+            <Link href="/settings">
+              <a 
+                className={`block px-3 py-2 rounded-md text-base font-medium ${
+                  location === '/settings'
+                    ? 'bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-teal-400'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Settings
+              </a>
+            </Link>
+          </nav>
+        )}
       </div>
-    </>
+    </header>
   );
-}
+};
+
+export default Header;

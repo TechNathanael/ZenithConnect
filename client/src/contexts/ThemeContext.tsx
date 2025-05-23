@@ -1,33 +1,41 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type ThemeType = "light" | "dark";
-
-interface ThemeContextType {
-  theme: ThemeType;
-  setTheme: (theme: ThemeType) => void;
+type ThemeContextType = {
+  theme: string;
+  setTheme: (theme: string) => void;
   toggleTheme: () => void;
-}
+};
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<ThemeType>(() => {
-    // Check for saved theme preference or prefer-color-scheme
-    const savedTheme = localStorage.getItem("theme") as ThemeType;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    return savedTheme || (prefersDark ? "dark" : "light");
-  });
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setTheme] = useState<string>('light');
 
   useEffect(() => {
-    // Save theme preference to localStorage
-    localStorage.setItem("theme", theme);
+    // Check local storage for theme preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      // Check system preference
+      setTheme('dark');
+    }
+  }, []);
+
+  useEffect(() => {
+    // Update class on document element when theme changes
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     
-    // Apply theme to document
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    // Save to localStorage
+    localStorage.setItem('theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === "light" ? "dark" : "light");
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
   return (
@@ -37,10 +45,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useTheme = () => {
+export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
 };

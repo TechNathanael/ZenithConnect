@@ -1,91 +1,82 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+ 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs))
 }
 
-// Format a number with K/M/B suffix for large numbers
-export function formatCompactNumber(num: number): string {
-  if (num < 1000) {
-    return num.toString();
-  } else if (num < 1000000) {
-    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  } else if (num < 1000000000) {
-    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  } else {
-    return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
-  }
+export function formatDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
 }
 
-// Format a date relative to now (e.g., "2 hours ago", "Yesterday", etc.)
-export function formatRelativeTime(dateString: string | Date): string {
-  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diffInSeconds < 60) {
-    return 'just now';
-  }
-  
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
-  }
-  
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
-  }
-  
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays === 1) {
-    return 'Yesterday';
-  }
-  
-  if (diffInDays < 7) {
-    return `${diffInDays} days ago`;
-  }
-  
-  const diffInWeeks = Math.floor(diffInDays / 7);
-  if (diffInWeeks === 1) {
-    return '1 week ago';
-  }
-  
-  if (diffInWeeks < 4) {
-    return `${diffInWeeks} weeks ago`;
-  }
-  
-  const diffInMonths = Math.floor(diffInDays / 30);
-  if (diffInMonths === 1) {
-    return '1 month ago';
-  }
-  
-  if (diffInMonths < 12) {
-    return `${diffInMonths} months ago`;
-  }
-  
-  const diffInYears = Math.floor(diffInDays / 365);
-  return `${diffInYears} ${diffInYears === 1 ? 'year' : 'years'} ago`;
+export function formatTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
 }
 
-// Generate a random ID
-export function generateId(length = 8): string {
-  return Math.random().toString(36).substring(2, 2 + length);
+export function formatDateTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return `${formatDate(d)} at ${formatTime(d)}`;
 }
 
-// Safely truncate text with ellipsis
-export function truncateText(text: string, maxLength: number): string {
+export function truncateText(text: string, maxLength: number = 100): string {
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
+  return text.slice(0, maxLength) + '...';
 }
 
-// Get initials from a name (e.g., "John Doe" -> "JD")
+export function getRandomColor() {
+  const colors = [
+    'bg-red-500',
+    'bg-blue-500',
+    'bg-green-500',
+    'bg-yellow-500',
+    'bg-purple-500',
+    'bg-pink-500',
+    'bg-indigo-500',
+    'bg-teal-500',
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
 export function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map(part => part.charAt(0))
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
+  if (!name) return '';
+  
+  const parts = name.split(' ');
+  if (parts.length === 1) return name.charAt(0).toUpperCase();
+  
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+export function generateRandomId(): string {
+  return Math.random().toString(36).substring(2, 10);
+}
+
+export function getRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const pastDate = typeof date === 'string' ? new Date(date) : date;
+  const secondsPast = (now.getTime() - pastDate.getTime()) / 1000;
+  
+  if (secondsPast < 60) {
+    return `${Math.floor(secondsPast)}s ago`;
+  }
+  if (secondsPast < 3600) {
+    return `${Math.floor(secondsPast / 60)}m ago`;
+  }
+  if (secondsPast < 86400) {
+    return `${Math.floor(secondsPast / 3600)}h ago`;
+  }
+  if (secondsPast < 604800) {
+    return `${Math.floor(secondsPast / 86400)}d ago`;
+  }
+  
+  return formatDate(pastDate);
 }
