@@ -95,7 +95,7 @@
 
 /* Utility classes */
 .gradient-brand {
-  @apply bg-gradient-to-r from-indigo-550 to-teal-450 text-transparent bg-clip-text;
+  @apply bg-gradient-to-r from-indigo-500 to-teal-400 text-transparent bg-clip-text;
 }
 
 .gradient-border {
