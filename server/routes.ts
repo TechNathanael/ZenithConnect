@@ -3,31 +3,11 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertPostSchema, insertCommentSchema, insertReactionSchema, insertUserSchema } from "@shared/schema";
-import { WebSocketServer, type WebSocket } from "ws";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
-  // Setup WebSocket server for real-time features
-  const wss = new WebSocketServer({ server: httpServer });
-  
-  wss.on('connection', (ws: WebSocket) => {
-    ws.on('message', (message: any) => {
-      console.log('received: %s', message);
-    });
-    
-    // Send welcome message
-    ws.send(JSON.stringify({ type: 'connection', message: 'Connected to ZenithHub WebSocket Server' }));
-  });
-  
-  // Broadcast function to send messages to all connected clients
-  const broadcast = (data: any) => {
-    wss.clients.forEach((client: WebSocket) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(data));
-      }
-    });
-  };
+  console.log('Starting ZenithHub server...');
   
   // Authentication Routes
   app.post('/api/auth/login', async (req, res) => {
@@ -162,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const author = await storage.getUser(post.userId);
       const comments = await storage.getPostComments(post.id);
       const reactions = await storage.getPostReactions(post.id);
-      const reactionTypes = [...new Set(reactions.map(r => r.type))];
+      const reactionTypes = Array.from(new Set(reactions.map(r => r.type)));
       
       // Get enhanced comments with author info
       const enhancedComments = await Promise.all(comments.map(async (comment) => {
@@ -213,13 +193,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const newPost = await storage.createPost(result.data);
       
-      // Notify connected clients about new post
-      broadcast({
-        type: 'new_post',
-        postId: newPost.id,
-        userId: newPost.userId
-      });
-      
       return res.status(201).json(newPost);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -242,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enhancedPosts = await Promise.all(posts.map(async (post) => {
         const comments = await storage.getPostComments(post.id);
         const reactions = await storage.getPostReactions(post.id);
-        const reactionTypes = [...new Set(reactions.map(r => r.type))];
+        const reactionTypes = Array.from(new Set(reactions.map(r => r.type)));
         
         return {
           ...post,
@@ -348,25 +321,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             content: `commented on your post: "${newComment.content.substring(0, 50)}${newComment.content.length > 50 ? '...' : ''}"`,
             link: `/posts/${post.id}`
           });
-          
-          // Notify connected clients about new notification
-          broadcast({
-            type: 'new_notification',
-            userId: post.userId,
-            triggeredBy: newComment.userId,
-            notificationType: 'comment',
-            postId: post.id
-          });
         }
       }
-      
-      // Notify connected clients about new comment
-      broadcast({
-        type: 'new_comment',
-        postId,
-        commentId: newComment.id,
-        userId: newComment.userId
-      });
       
       return res.status(201).json(enhancedComment);
     } catch (error) {
@@ -412,30 +368,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             content: `${reaction.type}d your post`,
             link: `/posts/${post.id}`
           });
-          
-          // Notify connected clients about new notification
-          broadcast({
-            type: 'new_notification',
-            userId: post.userId,
-            triggeredBy: reaction.userId,
-            notificationType: 'reaction',
-            postId: post.id
-          });
         }
       }
       
       // Get updated reactions for the post
       const reactions = await storage.getPostReactions(postId);
-      const reactionTypes = [...new Set(reactions.map(r => r.type))];
-      
-      // Notify connected clients about reaction update
-      broadcast({
-        type: 'reaction_update',
-        postId,
-        userId: reaction.userId,
-        reactionType: reaction.type,
-        totalReactions: reactions.length
-      });
+      const reactionTypes = Array.from(new Set(reactions.map(r => r.type)));
       
       return res.status(200).json({
         reaction,
@@ -496,196 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return res.status(200).json(userWithoutPassword);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-  });
-  
-  // Friends & Friendship Routes
-  app.get('/api/users/friends', async (req, res) => {
-    try {
-      const userId = parseInt(req.query.userId as string);
-      
-      if (!userId) {
-        return res.status(400).json({ message: 'User ID is required' });
-      }
-      
-      const friendships = await storage.getFriendships(userId, 'accepted');
-      
-      // Get friend details
-      const friends = await Promise.all(friendships.map(async (friendship) => {
-        const friendId = friendship.userId === userId ? friendship.friendId : friendship.userId;
-        const friend = await storage.getUser(friendId);
-        
-        if (!friend) return null;
-        
-        // Don't send the password back
-        const { password, ...friendWithoutPassword } = friend;
-        
-        return friendWithoutPassword;
-      }));
-      
-      // Filter out any null values (in case a friend was deleted)
-      const validFriends = friends.filter(Boolean);
-      
-      return res.status(200).json(validFriends);
-    } catch (error) {
-      console.error('Error fetching friends:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-  });
-  
-  app.get('/api/users/friend-requests', async (req, res) => {
-    try {
-      const userId = parseInt(req.query.userId as string);
-      
-      if (!userId) {
-        return res.status(400).json({ message: 'User ID is required' });
-      }
-      
-      // Get pending friend requests where this user is the recipient
-      const friendships = await storage.getFriendships(userId, 'pending');
-      const pendingRequests = friendships.filter(f => f.friendId === userId);
-      
-      // Get sender details
-      const requests = await Promise.all(pendingRequests.map(async (request) => {
-        const sender = await storage.getUser(request.userId);
-        
-        if (!sender) return null;
-        
-        // Don't send the password back
-        const { password, ...senderWithoutPassword } = sender;
-        
-        return {
-          id: request.id,
-          sender: senderWithoutPassword,
-          createdAt: request.createdAt
-        };
-      }));
-      
-      // Filter out any null values
-      const validRequests = requests.filter(Boolean);
-      
-      return res.status(200).json(validRequests);
-    } catch (error) {
-      console.error('Error fetching friend requests:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-  });
-  
-  app.post('/api/users/:userId/friend-request', async (req, res) => {
-    try {
-      const targetUserId = parseInt(req.params.userId);
-      const senderId = parseInt(req.body.userId);
-      
-      if (!senderId) {
-        return res.status(400).json({ message: 'Sender ID is required' });
-      }
-      
-      if (targetUserId === senderId) {
-        return res.status(400).json({ message: 'Cannot send friend request to yourself' });
-      }
-      
-      // Check if users exist
-      const sender = await storage.getUser(senderId);
-      const targetUser = await storage.getUser(targetUserId);
-      
-      if (!sender || !targetUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Check if friendship already exists
-      const existingFriendship = await storage.getFriendship(senderId, targetUserId);
-      
-      if (existingFriendship) {
-        return res.status(409).json({ 
-          message: `Friend request already ${existingFriendship.status}`,
-          status: existingFriendship.status
-        });
-      }
-      
-      // Create friend request
-      const friendship = await storage.createFriendship({
-        userId: senderId,
-        friendId: targetUserId,
-        status: 'pending'
-      });
-      
-      // Create notification for target user
-      await storage.createNotification({
-        userId: targetUserId,
-        triggeredBy: senderId,
-        type: 'friend',
-        content: 'sent you a friend request',
-        link: `/friends`
-      });
-      
-      // Notify connected clients
-      broadcast({
-        type: 'new_friend_request',
-        userId: targetUserId,
-        senderId: senderId
-      });
-      
-      return res.status(201).json(friendship);
-    } catch (error) {
-      console.error('Error sending friend request:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-  });
-  
-  app.post('/api/users/friend-requests/:requestId', async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.requestId);
-      const { accept, userId } = req.body;
-      
-      if (accept === undefined || !userId) {
-        return res.status(400).json({ message: 'Accept status and user ID are required' });
-      }
-      
-      // Get the friend request
-      const friendship = await storage.getFriendships(userId).then(
-        friendships => friendships.find(f => f.id === requestId)
-      );
-      
-      if (!friendship) {
-        return res.status(404).json({ message: 'Friend request not found' });
-      }
-      
-      // Make sure the logged in user is the recipient
-      if (friendship.friendId !== userId) {
-        return res.status(403).json({ message: 'Not authorized to respond to this request' });
-      }
-      
-      // Update friendship status
-      const newStatus = accept ? 'accepted' : 'rejected';
-      const updatedFriendship = await storage.updateFriendshipStatus(requestId, newStatus);
-      
-      if (!updatedFriendship) {
-        return res.status(500).json({ message: 'Failed to update friend request' });
-      }
-      
-      // If accepted, create notification for sender
-      if (accept) {
-        await storage.createNotification({
-          userId: friendship.userId,
-          triggeredBy: userId,
-          type: 'friend',
-          content: 'accepted your friend request',
-          link: `/profile/${userId}`
-        });
-        
-        // Notify connected clients
-        broadcast({
-          type: 'friend_request_accepted',
-          userId: friendship.userId,
-          friendId: userId
-        });
-      }
-      
-      return res.status(200).json(updatedFriendship);
-    } catch (error) {
-      console.error('Error responding to friend request:', error);
+      console.error('Error updating user profile:', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -693,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notification Routes
   app.get('/api/notifications', async (req, res) => {
     try {
-      const userId = parseInt(req.query.userId as string);
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : 0;
       
       if (!userId) {
         return res.status(400).json({ message: 'User ID is required' });
@@ -701,21 +450,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const notifications = await storage.getUserNotifications(userId);
       
-      // Enhance notifications with triggerer info
+      // Enhance notifications with triggeredBy user info
       const enhancedNotifications = await Promise.all(notifications.map(async (notification) => {
-        // Skip enhancing for system notifications
-        if (notification.userId === notification.triggeredBy) {
-          return notification;
-        }
-        
-        const triggerer = await storage.getUser(notification.triggeredBy);
+        const triggeredByUser = await storage.getUser(notification.triggeredBy);
         return {
           ...notification,
-          triggerer: triggerer ? {
-            id: triggerer.id,
-            username: triggerer.username,
-            displayName: triggerer.displayName,
-            avatar: triggerer.avatar,
+          triggeredByUser: triggeredByUser ? {
+            id: triggeredByUser.id,
+            username: triggeredByUser.username,
+            displayName: triggeredByUser.displayName,
+            avatar: triggeredByUser.avatar,
           } : undefined
         };
       }));
@@ -727,14 +471,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch('/api/notifications/:id', async (req, res) => {
+  app.get('/api/notifications/unread/count', async (req, res) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : 0;
+      
+      if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+      }
+      
+      const count = await storage.getUnreadNotificationsCount(userId);
+      
+      return res.status(200).json({ count });
+    } catch (error) {
+      console.error('Error fetching unread notifications count:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  app.patch('/api/notifications/:id/read', async (req, res) => {
     try {
       const notificationId = parseInt(req.params.id);
-      const { isRead } = req.body;
-      
-      if (isRead === undefined) {
-        return res.status(400).json({ message: 'isRead status is required' });
-      }
       
       const notification = await storage.markNotificationAsRead(notificationId);
       
@@ -744,32 +500,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return res.status(200).json(notification);
     } catch (error) {
-      console.error('Error updating notification:', error);
+      console.error('Error marking notification as read:', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   });
   
-  app.patch('/api/notifications/mark-all-read', async (req, res) => {
+  app.patch('/api/notifications/read-all', async (req, res) => {
     try {
-      const userId = parseInt(req.body.userId as string);
+      const userId = req.body.userId;
       
       if (!userId) {
         return res.status(400).json({ message: 'User ID is required' });
       }
       
-      await storage.markAllNotificationsAsRead(userId);
+      const result = await storage.markAllNotificationsAsRead(userId);
       
-      return res.status(200).json({ message: 'All notifications marked as read' });
+      return res.status(200).json({ success: result });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   });
   
-  // Message Routes
-  app.get('/api/messages/conversations', async (req, res) => {
+  // Friendship Routes
+  app.get('/api/friends', async (req, res) => {
     try {
-      const userId = parseInt(req.query.userId as string);
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : 0;
+      const status = req.query.status as string || 'accepted';
+      
+      if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+      }
+      
+      const friendships = await storage.getFriendships(userId, status);
+      
+      // Enhance friendships with friend info
+      const enhancedFriendships = await Promise.all(friendships.map(async (friendship) => {
+        const friendId = friendship.userId === userId ? friendship.friendId : friendship.userId;
+        const friend = await storage.getUser(friendId);
+        return {
+          ...friendship,
+          friend: friend ? {
+            id: friend.id,
+            username: friend.username,
+            displayName: friend.displayName,
+            avatar: friend.avatar,
+            isOnline: friend.isOnline
+          } : undefined
+        };
+      }));
+      
+      return res.status(200).json(enhancedFriendships);
+    } catch (error) {
+      console.error('Error fetching friendships:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  app.post('/api/friends/request', async (req, res) => {
+    try {
+      const { userId, friendId } = req.body;
+      
+      if (!userId || !friendId) {
+        return res.status(400).json({ message: 'User ID and Friend ID are required' });
+      }
+      
+      // Check if users exist
+      const user = await storage.getUser(userId);
+      const friend = await storage.getUser(friendId);
+      
+      if (!user || !friend) {
+        return res.status(404).json({ message: 'User or friend not found' });
+      }
+      
+      // Check if friendship already exists
+      const existingFriendship = await storage.getFriendship(userId, friendId);
+      
+      if (existingFriendship) {
+        return res.status(409).json({ 
+          message: 'Friendship already exists', 
+          status: existingFriendship.status 
+        });
+      }
+      
+      // Create friendship request
+      const friendship = await storage.createFriendship({
+        userId,
+        friendId,
+        status: 'pending'
+      });
+      
+      // Create notification for friend
+      await storage.createNotification({
+        userId: friendId,
+        triggeredBy: userId,
+        type: 'friend',
+        content: 'sent you a friend request',
+        link: `/profile/${user.username}`
+      });
+      
+      return res.status(201).json(friendship);
+    } catch (error) {
+      console.error('Error creating friend request:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  app.patch('/api/friends/:id/status', async (req, res) => {
+    try {
+      const friendshipId = parseInt(req.params.id);
+      const { status, userId } = req.body;
+      
+      if (!status || !userId) {
+        return res.status(400).json({ message: 'Status and User ID are required' });
+      }
+      
+      const friendship = await storage.updateFriendshipStatus(friendshipId, status);
+      
+      if (!friendship) {
+        return res.status(404).json({ message: 'Friendship not found' });
+      }
+      
+      // If accepted, create notification for the requester
+      if (status === 'accepted' && friendship.userId !== userId) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          await storage.createNotification({
+            userId: friendship.userId,
+            triggeredBy: userId,
+            type: 'friend',
+            content: 'accepted your friend request',
+            link: `/profile/${user.username}`
+          });
+        }
+      }
+      
+      return res.status(200).json(friendship);
+    } catch (error) {
+      console.error('Error updating friendship status:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Messages Routes
+  app.get('/api/conversations', async (req, res) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : 0;
       
       if (!userId) {
         return res.status(400).json({ message: 'User ID is required' });
@@ -777,235 +653,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const conversations = await storage.getUserConversations(userId);
       
-      // Enhance conversations with participant info and last message
-      const enhancedConversations = await Promise.all(conversations.map(async (conversation) => {
-        // Get participants except current user
-        const participants = await storage.getConversationMessages(conversation.id);
-        const lastMessage = participants.length > 0 ? participants[participants.length - 1] : null;
-        
-        // Get all participants
-        const participantsData: any[] = [];
-        const seenUserIds = new Set<number>();
-        
-        for (const message of participants) {
-          if (!seenUserIds.has(message.userId)) {
-            const user = await storage.getUser(message.userId);
-            if (user && user.id !== userId) {
-              seenUserIds.add(user.id);
-              participantsData.push({
-                id: user.id,
-                username: user.username,
-                displayName: user.displayName,
-                avatar: user.avatar,
-                isOnline: user.isOnline
-              });
-            }
-          }
-        }
-        
-        return {
-          id: conversation.id,
-          participants: participantsData,
-          lastMessage: lastMessage ? {
-            id: lastMessage.id,
-            content: lastMessage.content,
-            createdAt: lastMessage.createdAt,
-            isRead: lastMessage.isRead,
-            userId: lastMessage.userId
-          } : null,
-          updatedAt: conversation.updatedAt
-        };
-      }));
-      
-      return res.status(200).json(enhancedConversations);
+      return res.status(200).json(conversations);
     } catch (error) {
       console.error('Error fetching conversations:', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   });
   
-  app.get('/api/messages/conversations/:id', async (req, res) => {
+  app.get('/api/conversations/:id/messages', async (req, res) => {
     try {
       const conversationId = parseInt(req.params.id);
-      const userId = parseInt(req.query.userId as string);
-      
-      if (!userId) {
-        return res.status(400).json({ message: 'User ID is required' });
-      }
       
       const messages = await storage.getConversationMessages(conversationId);
       
-      // Enhance messages with sender info
-      const enhancedMessages = await Promise.all(messages.map(async (message) => {
-        const sender = await storage.getUser(message.userId);
-        return {
-          ...message,
-          sender: sender ? {
-            id: sender.id,
-            username: sender.username,
-            displayName: sender.displayName,
-            avatar: sender.avatar,
-          } : undefined,
-          isFromMe: message.userId === userId
-        };
+      // Mark messages as read
+      await Promise.all(messages.map(async (message) => {
+        if (!message.isRead && message.userId !== parseInt(req.query.userId as string)) {
+          await storage.markMessageAsRead(message.id);
+        }
       }));
       
-      return res.status(200).json(enhancedMessages);
+      // Re-fetch messages to get updated read status
+      const updatedMessages = await storage.getConversationMessages(conversationId);
+      
+      return res.status(200).json(updatedMessages);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Error fetching conversation messages:', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   });
   
-  app.post('/api/messages/conversations/:id', async (req, res) => {
+  app.post('/api/conversations', async (req, res) => {
     try {
-      const conversationId = parseInt(req.params.id);
-      const { content, userId } = req.body;
+      const { participants } = req.body;
       
-      if (!content || !userId) {
-        return res.status(400).json({ message: 'Content and user ID are required' });
+      if (!participants || !Array.isArray(participants) || participants.length < 2) {
+        return res.status(400).json({ message: 'At least two participants are required' });
       }
       
-      const newMessage = await storage.sendMessage({
-        conversationId,
-        userId,
-        content
-      });
+      const conversation = await storage.createConversation(participants);
       
-      // Get sender info for the response
-      const sender = await storage.getUser(userId);
-      const enhancedMessage = {
-        ...newMessage,
-        sender: sender ? {
-          id: sender.id,
-          username: sender.username,
-          displayName: sender.displayName,
-          avatar: sender.avatar,
-        } : undefined,
-        isFromMe: true
-      };
-      
-      // Notify connected clients about new message
-      broadcast({
-        type: 'new_message',
-        conversationId,
-        message: enhancedMessage
-      });
-      
-      return res.status(201).json(enhancedMessage);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-  });
-  
-  app.post('/api/messages/conversations', async (req, res) => {
-    try {
-      const { userId, participantId } = req.body;
-      
-      if (!userId || !participantId) {
-        return res.status(400).json({ message: 'User ID and participant ID are required' });
-      }
-      
-      // Check if users exist
-      const user = await storage.getUser(userId);
-      const participant = await storage.getUser(participantId);
-      
-      if (!user || !participant) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Create conversation
-      const conversation = await storage.createConversation([userId, participantId]);
-      
-      return res.status(201).json({
-        id: conversation.id,
-        participants: [
-          {
-            id: user.id,
-            username: user.username,
-            displayName: user.displayName,
-            avatar: user.avatar,
-            isOnline: user.isOnline
-          },
-          {
-            id: participant.id,
-            username: participant.username,
-            displayName: participant.displayName,
-            avatar: participant.avatar,
-            isOnline: participant.isOnline
-          }
-        ],
-        lastMessage: null,
-        updatedAt: conversation.updatedAt
-      });
+      return res.status(201).json(conversation);
     } catch (error) {
       console.error('Error creating conversation:', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   });
   
-  // Settings Routes
-  app.get('/api/settings', async (req, res) => {
+  app.post('/api/messages', async (req, res) => {
     try {
-      const userId = parseInt(req.query.userId as string);
+      const messageData = req.body;
       
-      if (!userId) {
-        return res.status(400).json({ message: 'User ID is required' });
-      }
+      const message = await storage.sendMessage(messageData);
       
-      let settings = await storage.getUserSettings(userId);
-      
-      // If no settings exist yet, create default settings
-      if (!settings) {
-        settings = await storage.createUserSettings({
-          userId,
-          theme: 'light',
-          privacySettings: {
-            profileVisibility: 'public',
-            activityStatus: true,
-            friendRequests: 'everyone',
-            searchVisibility: true,
-            tagApproval: true,
-            twoFactorAuth: false,
-            locationSharing: false
-          },
-          notificationSettings: {
-            directMessages: true,
-            friendRequests: true,
-            mentions: true,
-            comments: true,
-            reactions: true,
-            groupActivity: true,
-            emailNotifications: false,
-            pushNotifications: true
-          },
-          appearanceSettings: {
-            theme: 'light',
-            contentDensity: 'comfortable',
-            animationsEnabled: true,
-            highContrastMode: false,
-            fontSizeAdjustment: 'default'
-          }
-        });
-      }
-      
-      return res.status(200).json(settings);
+      return res.status(201).json(message);
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      console.error('Error sending message:', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   });
   
-  app.patch('/api/settings', async (req, res) => {
+  // User Settings Routes
+  app.get('/api/users/:userId/settings', async (req, res) => {
     try {
-      const { userId, ...updateData } = req.body;
+      const userId = parseInt(req.params.userId);
       
-      if (!userId) {
-        return res.status(400).json({ message: 'User ID is required' });
+      const settings = await storage.getUserSettings(userId);
+      
+      if (!settings) {
+        return res.status(404).json({ message: 'Settings not found' });
       }
       
-      const updatedSettings = await storage.updateUserSettings(userId, updateData);
+      return res.status(200).json(settings);
+    } catch (error) {
+      console.error('Error fetching user settings:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  app.patch('/api/users/:userId/settings', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const settingsData = req.body;
+      
+      const updatedSettings = await storage.updateUserSettings(userId, settingsData);
       
       if (!updatedSettings) {
         return res.status(404).json({ message: 'Settings not found' });
@@ -1013,105 +744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return res.status(200).json(updatedSettings);
     } catch (error) {
-      console.error('Error updating settings:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-  });
-  
-  // Discover Routes
-  app.get('/api/discover/trending', async (req, res) => {
-    try {
-      // For simplicity in this MVP, we'll return mock trending topics
-      const trendingTopics = [
-        { id: 1, tag: "AITechnology", postsCount: "2.3K", category: "technology" },
-        { id: 2, tag: "ProductDesign", postsCount: "1.8K", category: "design" },
-        { id: 3, tag: "WebDevelopment", postsCount: "1.2K", category: "technology" },
-        { id: 4, tag: "UXDesign", postsCount: "950", category: "design" },
-        { id: 5, tag: "MobileDevelopment", postsCount: "845", category: "technology" },
-        { id: 6, tag: "DataVisualization", postsCount: "780", category: "technology" },
-        { id: 7, tag: "WorkplaceWellness", postsCount: "720", category: "lifestyle" },
-        { id: 8, tag: "RemoteWork", postsCount: "690", category: "work" },
-        { id: 9, tag: "SustainableDesign", postsCount: "650", category: "design" },
-        { id: 10, tag: "ArtificialIntelligence", postsCount: "615", category: "technology" }
-      ];
-      
-      // Filter by category if provided
-      const category = req.query.category as string | undefined;
-      const filteredTopics = category 
-        ? trendingTopics.filter(topic => topic.category === category)
-        : trendingTopics;
-      
-      return res.status(200).json(filteredTopics);
-    } catch (error) {
-      console.error('Error fetching trending topics:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-  });
-  
-  app.get('/api/discover/groups', async (req, res) => {
-    try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      const category = req.query.category as string | undefined;
-      
-      const groups = await storage.getGroups(limit, offset, category);
-      
-      // Enhance groups with creator info and member count
-      const enhancedGroups = await Promise.all(groups.map(async (group) => {
-        const creator = await storage.getUser(group.creatorId);
-        
-        return {
-          ...group,
-          creator: creator ? {
-            id: creator.id,
-            username: creator.username,
-            displayName: creator.displayName,
-            avatar: creator.avatar,
-          } : undefined,
-          membersCount: Math.floor(Math.random() * 10000) + 1000 // Mock member count for MVP
-        };
-      }));
-      
-      return res.status(200).json(enhancedGroups);
-    } catch (error) {
-      console.error('Error fetching groups:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-  });
-  
-  app.get('/api/discover/events', async (req, res) => {
-    try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      
-      const events = await storage.getEvents(limit, offset);
-      
-      // Enhance events with creator info and attendees count
-      const enhancedEvents = await Promise.all(events.map(async (event) => {
-        const creator = await storage.getUser(event.creatorId);
-        
-        return {
-          ...event,
-          creator: creator ? {
-            id: creator.id,
-            username: creator.username,
-            displayName: creator.displayName,
-            avatar: creator.avatar,
-          } : undefined,
-          attendees: {
-            count: Math.floor(Math.random() * 300) + 20, // Mock attendees count for MVP
-            avatars: [
-              "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150",
-              "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150",
-              "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150"
-            ]
-          }
-        };
-      }));
-      
-      return res.status(200).json(enhancedEvents);
-    } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error('Error updating user settings:', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   });
