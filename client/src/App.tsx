@@ -9,6 +9,8 @@ import Notifications from "@/pages/notifications";
 import Discover from "@/pages/discover";
 import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
+import Marketplace from "@/pages/marketplace";
+import Groups from "@/pages/groups";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import NotFound from "@/pages/not-found";
@@ -88,6 +90,8 @@ function App() {
               <Route path="/discover" component={Discover} />
               <Route path="/profile" component={Profile} />
               <Route path="/settings" component={Settings} />
+              <Route path="/marketplace" component={Marketplace} />
+              <Route path="/groups" component={Groups} />
               <Route component={NotFound} />
             </Switch>
           </main>

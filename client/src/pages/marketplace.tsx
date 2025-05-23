@@ -31,6 +31,12 @@ interface ProductListing {
 }
 
 const Marketplace: React.FC = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [categories, setCategories] = useState<ProductCategory[]>([
     { id: 1, name: 'Electronics', count: 1283 },
     { id: 2, name: 'Furniture', count: 856 },
@@ -41,7 +47,7 @@ const Marketplace: React.FC = () => {
     { id: 7, name: 'Sports & Outdoors', count: 637 },
     { id: 8, name: 'Toys & Games', count: 498 },
     { id: 9, name: 'Books & Media', count: 723 },
-    { id: 10, name: 'Services', count: 346 },
+    { id: 10, name: 'Services', count: 346 }
   ]);
   
   const [products, setProducts] = useState<ProductListing[]>([
@@ -54,14 +60,14 @@ const Marketplace: React.FC = () => {
       condition: 'Like new',
       images: [
         'https://images.unsplash.com/photo-1675031596780-59ffb46ad1e2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600',
-        'https://images.unsplash.com/photo-1675031593166-61fc1a37a067?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600',
+        'https://images.unsplash.com/photo-1675031593166-61fc1a37a067?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600'
       ],
       seller: {
         id: 1,
         name: 'Alex Morgan',
         avatar: 'https://images.unsplash.com/photo-1607746882042-944635dfe10e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100',
         rating: 4.9,
-        isVerified: true,
+        isVerified: true
       },
       likeCount: 27,
       isLiked: false,
@@ -77,14 +83,14 @@ const Marketplace: React.FC = () => {
       distance: '8.7 miles away',
       condition: 'Good',
       images: [
-        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600',
+        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600'
       ],
       seller: {
         id: 2,
         name: 'Jamie Lee',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100',
         rating: 4.7,
-        isVerified: true,
+        isVerified: true
       },
       likeCount: 14,
       isLiked: false,
@@ -100,20 +106,20 @@ const Marketplace: React.FC = () => {
       distance: '5.3 miles away',
       condition: 'Excellent',
       images: [
-        'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600',
+        'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600'
       ],
       seller: {
         id: 3,
         name: 'Michael Chen',
         avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100',
         rating: 5.0,
-        isVerified: true,
+        isVerified: true
       },
       likeCount: 32,
       isLiked: true,
       isBookmarked: false,
       postedAt: '2025-05-22T11:20:00',
-      description: 'Trek Marlin 7 mountain bike in excellent condition. 29" wheels, hydraulic disc brakes, front suspension. Only ridden a few times on beginner trails. No damage or issues. Selling because I'm upgrading to a full-suspension bike.'
+      description: 'Trek Marlin 7 mountain bike in excellent condition. 29" wheels, hydraulic disc brakes, front suspension. Only ridden a few times on beginner trails. No damage or issues. Selling because I am upgrading to a full-suspension bike.'
     },
     {
       id: 4,
@@ -123,14 +129,14 @@ const Marketplace: React.FC = () => {
       distance: '42.1 miles away',
       condition: 'Like new',
       images: [
-        'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600',
+        'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600'
       ],
       seller: {
         id: 4,
         name: 'Rebecca Wong',
         avatar: 'https://images.unsplash.com/photo-1602233158242-3ba0ac4d2167?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100',
         rating: 4.8,
-        isVerified: false,
+        isVerified: false
       },
       likeCount: 42,
       isLiked: false,
@@ -146,20 +152,20 @@ const Marketplace: React.FC = () => {
       distance: '34.6 miles away',
       condition: 'Good',
       images: [
-        'https://images.unsplash.com/photo-1499933374294-4584851497cc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600',
+        'https://images.unsplash.com/photo-1499933374294-4584851497cc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600'
       ],
       seller: {
         id: 5,
         name: 'Daniel Garcia',
         avatar: 'https://images.unsplash.com/photo-1624561172888-ac93c696e10c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100',
         rating: 4.5,
-        isVerified: true,
+        isVerified: true
       },
       likeCount: 19,
       isLiked: false,
       isBookmarked: false,
       postedAt: '2025-05-23T08:15:00',
-      description: 'Article Niva coffee table in walnut with black steel legs. Rectangular design with open shelf underneath. Some minor scratches on the top surface but still looks beautiful. Selling as we're redecorating our living room.'
+      description: 'Article Niva coffee table in walnut with black steel legs. Rectangular design with open shelf underneath. Some minor scratches on the top surface but still looks beautiful. Selling as we are redecorating our living room.'
     },
     {
       id: 6,
@@ -169,29 +175,23 @@ const Marketplace: React.FC = () => {
       distance: '1.8 miles away',
       condition: 'Like new',
       images: [
-        'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600',
+        'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600'
       ],
       seller: {
         id: 6,
         name: 'Sarah Johnson',
         avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100',
         rating: 4.9,
-        isVerified: true,
+        isVerified: true
       },
       likeCount: 56,
       isLiked: false,
       isBookmarked: true,
       postedAt: '2025-05-23T10:40:00',
       description: 'Macbook Pro 16" with M2 Pro chip, 32GB RAM, and 1TB SSD. Space Gray. Purchased 3 months ago. Like new condition with only 22 battery cycles. Original box and charger included. AppleCare+ until March 2026. Selling because I received a work laptop.'
-    },
+    }
   ]);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  
   // Format relative time
   const getRelativeTime = (timestamp: string) => {
     const now = new Date();
@@ -230,14 +230,14 @@ const Marketplace: React.FC = () => {
           distance: '2.5 miles away',
           condition: 'Excellent',
           images: [
-            'https://images.unsplash.com/photo-1502982720700-bfff97f2ecac?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600',
+            'https://images.unsplash.com/photo-1502982720700-bfff97f2ecac?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600'
           ],
           seller: {
             id: 7,
             name: 'Luke Peterson',
             avatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100',
             rating: 4.7,
-            isVerified: true,
+            isVerified: true
           },
           likeCount: 38,
           isLiked: false,
@@ -253,14 +253,14 @@ const Marketplace: React.FC = () => {
           distance: '6.1 miles away',
           condition: 'Good',
           images: [
-            'https://images.unsplash.com/photo-1603049489988-53ebe4cd1c38?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600',
+            'https://images.unsplash.com/photo-1603049489988-53ebe4cd1c38?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600'
           ],
           seller: {
             id: 8,
             name: 'Marcus Reynolds',
             avatar: 'https://images.unsplash.com/photo-1531384441138-2736e62e0919?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100',
             rating: 4.9,
-            isVerified: true,
+            isVerified: true
           },
           likeCount: 64,
           isLiked: false,
@@ -458,7 +458,7 @@ const Marketplace: React.FC = () => {
                   <option value="5">Within 5 miles</option>
                   <option value="10">Within 10 miles</option>
                   <option value="25">Within 25 miles</option>
-                  <option value="50" selected>Within 50 miles</option>
+                  <option value="50">Within 50 miles</option>
                   <option value="100">Within 100 miles</option>
                   <option value="any">Any distance</option>
                 </select>
