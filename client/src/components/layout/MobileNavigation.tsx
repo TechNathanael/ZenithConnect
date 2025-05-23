@@ -1,53 +1,40 @@
-import { Link, useLocation } from "wouter";
+import React from 'react';
+import { Link, useLocation } from 'wouter';
+import { Home, Compass, Users, MessageCircle, Bell } from 'lucide-react';
 
-export default function MobileNavigation() {
+const MobileNavigation: React.FC = () => {
   const [location] = useLocation();
-  
+
+  const navItems = [
+    { path: '/', icon: Home, label: 'Home' },
+    { path: '/discover', icon: Compass, label: 'Discover' },
+    { path: '/friends', icon: Users, label: 'Friends' },
+    { path: '/messages', icon: MessageCircle, label: 'Messages' },
+    { path: '/notifications', icon: Bell, label: 'Notifications' }
+  ];
+
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40">
-      <div className="flex justify-between px-6 py-2">
-        <Link 
-          href="/" 
-          className={`flex flex-col items-center ${location === "/" ? "text-indigo-550" : "text-gray-500 dark:text-gray-400"}`}
-        >
-          <span className="material-icons">home</span>
-          <span className="text-xs mt-1">Home</span>
-        </Link>
-        <Link 
-          href="/friends" 
-          className={`flex flex-col items-center ${location === "/friends" ? "text-indigo-550" : "text-gray-500 dark:text-gray-400"}`}
-        >
-          <span className="material-icons">people</span>
-          <span className="text-xs mt-1">Friends</span>
-        </Link>
-        <Link 
-          href="/messages" 
-          className={`flex flex-col items-center ${location === "/messages" ? "text-indigo-550" : "text-gray-500 dark:text-gray-400"}`}
-        >
-          <div className="relative">
-            <span className="material-icons">chat</span>
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-550 rounded-full"></span>
-          </div>
-          <span className="text-xs mt-1">Messages</span>
-        </Link>
-        <Link 
-          href="/notifications" 
-          className={`flex flex-col items-center ${location === "/notifications" ? "text-indigo-550" : "text-gray-500 dark:text-gray-400"}`}
-        >
-          <div className="relative">
-            <span className="material-icons">notifications</span>
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </div>
-          <span className="text-xs mt-1">Alerts</span>
-        </Link>
-        <Link 
-          href="/profile" 
-          className={`flex flex-col items-center ${location === "/profile" ? "text-indigo-550" : "text-gray-500 dark:text-gray-400"}`}
-        >
-          <span className="material-icons">menu</span>
-          <span className="text-xs mt-1">Menu</span>
-        </Link>
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+      <div className="grid grid-cols-5">
+        {navItems.map((item) => (
+          <Link key={item.path} href={item.path}>
+            <a className={`flex flex-col items-center justify-center py-2 text-xs font-medium ${
+              location === item.path
+                ? 'text-indigo-600 dark:text-teal-400'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}>
+              <item.icon className={`h-6 w-6 mb-1 ${
+                location === item.path
+                  ? 'text-indigo-600 dark:text-teal-400'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`} />
+              <span>{item.label}</span>
+            </a>
+          </Link>
+        ))}
       </div>
     </div>
   );
-}
+};
+
+export default MobileNavigation;
