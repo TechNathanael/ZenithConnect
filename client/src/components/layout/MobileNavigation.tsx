@@ -1,38 +1,35 @@
-import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { Home, Compass, Users, MessageCircle, Bell } from 'lucide-react';
+import { Home, Users, MessageSquare, Bell, Compass } from 'lucide-react';
 
-const MobileNavigation: React.FC = () => {
+const MobileNavigation = () => {
   const [location] = useLocation();
-
+  
   const navItems = [
-    { path: '/', icon: Home, label: 'Home' },
-    { path: '/discover', icon: Compass, label: 'Discover' },
-    { path: '/friends', icon: Users, label: 'Friends' },
-    { path: '/messages', icon: MessageCircle, label: 'Messages' },
-    { path: '/notifications', icon: Bell, label: 'Notifications' }
+    { icon: <Home className="h-6 w-6" />, label: 'Home', path: '/' },
+    { icon: <Users className="h-6 w-6" />, label: 'Friends', path: '/friends' },
+    { icon: <MessageSquare className="h-6 w-6" />, label: 'Messages', path: '/messages' },
+    { icon: <Bell className="h-6 w-6" />, label: 'Notifications', path: '/notifications' },
+    { icon: <Compass className="h-6 w-6" />, label: 'Discover', path: '/discover' },
   ];
-
+  
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-      <div className="grid grid-cols-5">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-10">
+      <nav className="grid grid-cols-5">
         {navItems.map((item) => (
-          <Link key={item.path} href={item.path}>
-            <a className={`flex flex-col items-center justify-center py-2 text-xs font-medium ${
-              location === item.path
-                ? 'text-indigo-600 dark:text-teal-400'
-                : 'text-gray-500 dark:text-gray-400'
-            }`}>
-              <item.icon className={`h-6 w-6 mb-1 ${
+          <div key={item.path} className="flex justify-center">
+            <Link href={item.path}>
+              <div className={`flex flex-col items-center py-2 cursor-pointer ${
                 location === item.path
-                  ? 'text-indigo-600 dark:text-teal-400'
-                  : 'text-gray-500 dark:text-gray-400'
-              }`} />
-              <span>{item.label}</span>
-            </a>
-          </Link>
+                  ? 'text-indigo-500 dark:text-teal-400'
+                  : 'text-gray-600 dark:text-gray-400'
+              }`}>
+                {item.icon}
+                <span className="text-xs mt-1">{item.label}</span>
+              </div>
+            </Link>
+          </div>
         ))}
-      </div>
+      </nav>
     </div>
   );
 };
