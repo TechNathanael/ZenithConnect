@@ -181,21 +181,21 @@ const Home: React.FC = () => {
               <div key={post.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {/* Post Header */}
                 <div className="p-4 flex items-center">
-                  <Link href={`/profile/${post.user.username}`}>
-                    <a className="w-10 h-10 rounded-full overflow-hidden mr-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden mr-3 cursor-pointer">
+                    <Link href={`/profile/${post.user.username}`}>
                       <img 
                         src={post.user.avatar} 
                         alt={post.user.displayName} 
                         className="w-full h-full object-cover"
                       />
-                    </a>
-                  </Link>
-                  <div className="flex-1">
-                    <Link href={`/profile/${post.user.username}`}>
-                      <a className="font-medium text-gray-900 dark:text-white text-sm hover:underline">
-                        {post.user.displayName}
-                      </a>
                     </Link>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 dark:text-white text-sm hover:underline cursor-pointer">
+                      <Link href={`/profile/${post.user.username}`}>
+                        {post.user.displayName}
+                      </Link>
+                    </div>
                     <div className="text-gray-500 dark:text-gray-400 text-xs">
                       {getRelativeTime(post.createdAt)}
                     </div>
